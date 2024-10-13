@@ -1,0 +1,52 @@
+const mongoose = require('mongoose');
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+console.log("USEEEER MODEL");
+const userschema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: [true, 'name is mandatory'],
+        unique : true
+    },
+    language: {
+        type: String,
+        required: [true, 'language is mandatrory']
+    },
+    country: {
+        type: String,
+        required: [true, "Provide country according to ISO 3166-1. Like 'us','de'"],
+        maxLength: 2
+    },
+    password: {
+        type: String,
+        required: [true, 'Please provide a password'],
+        minlength: 8
+    }
+});
+
+userschema.pre('save', async function(next) {
+    // Only run this function if password was actually modified
+    if (!this.isModified('password')) return next();
+  
+    // Hash the password with cost of 12
+    this.password = await bcrypt.hash(this.password, 10);
+  
+    // Delete passwordConfirm field
+    this.passwordConfirm = undefined;
+    next();
+});
+
+//check if login pw is same as from signup--returns boolean
+userschema.methods.correctPassword = async function(candidatePassword,userPassword) 
+{
+    return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+const userinfo = mongoose.model('userinfo', userschema);
+module.exports = userinfo;
+
+
+
+
+
